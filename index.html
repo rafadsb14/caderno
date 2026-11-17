@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0b1118">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Análise de Adversário</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📋</text></svg>">
+<style>
+:root{--bg:#0d141b;--card:#16212c;--card2:#1c2937;--line:#2b3b4b;--txt:#e8eef4;--mut:#8ba1b5;--acc:#2fbf71;--red:#e23b3b;--blue:#3b82f6;--yel:#ffe14d}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0}
+body{background:var(--bg);color:var(--txt);font:15px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;overflow-x:hidden}
+header{position:sticky;top:0;z-index:20;background:#0a1117;border-bottom:1px solid var(--line);padding:9px 12px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+header .tit{font-weight:700;font-size:16px;margin-right:6px}
+header .sp{flex:1}
+button,.btn{font:inherit;background:var(--card2);color:var(--txt);border:1px solid var(--line);border-radius:9px;padding:8px 12px;cursor:pointer}
+button:active{transform:scale(.98)}
+.btn.pri{background:var(--acc);border-color:var(--acc);color:#04140b;font-weight:700}
+.btn.del{border-color:#7a2a2a;color:#ff8f8f}
+.btn.sm{padding:5px 9px;font-size:13px}
+.wrap{max-width:1150px;margin:0 auto;padding:12px 12px 90px}
+@media(min-width:820px){.wrap{display:grid;grid-template-columns:250px 1fr;gap:14px;align-items:start}}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:13px;margin-bottom:12px}
+.side{position:relative}
+.side .it{padding:9px 10px;border-radius:9px;cursor:pointer;border:1px solid transparent;margin-bottom:5px;background:var(--card2)}
+.side .it.on{border-color:var(--acc);background:#17301f}
+.side .it b{display:block;font-size:14px}
+.side .it small{color:var(--mut);font-size:12px}
+h2{margin:0 0 4px;font-size:18px}
+h3{margin:0;font-size:14px;letter-spacing:.03em;text-transform:uppercase;color:var(--acc)}
+.sec{border-top:1px solid var(--line);margin-top:14px;padding-top:12px}
+label{display:block;font-size:12px;color:var(--mut);text-transform:uppercase;letter-spacing:.04em;margin:10px 0 4px}
+input,textarea,select{width:100%;font:inherit;font-size:15px;background:#0f1a24;color:var(--txt);border:1px solid var(--line);border-radius:9px;padding:9px}
+textarea{min-height:76px;resize:vertical}
+.g2{display:grid;grid-template-columns:1fr;gap:10px}
+.g3{display:grid;grid-template-columns:1fr;gap:10px}
+@media(min-width:620px){.g2{grid-template-columns:1fr 1fr}.g3{grid-template-columns:1fr 1fr 1fr}}
+.row{display:flex;gap:7px;flex-wrap:wrap;align-items:center}
+.sp2{flex:1}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th,td{text-align:left;padding:5px 4px;border-bottom:1px solid var(--line)}
+th{font-size:11px;color:var(--mut);text-transform:uppercase;letter-spacing:.04em}
+td input,td select{padding:6px}
+.tags{display:flex;gap:5px}
+.fV,.fE,.fD{display:inline-block;width:22px;height:22px;line-height:22px;text-align:center;border-radius:6px;font-size:12px;font-weight:800;color:#03120a}
+.fV{background:#2fbf71}.fE{background:#9aa8b4;color:#101a22}.fD{background:#e23b3b;color:#fff}
+.jogada{border:1px solid var(--line);border-radius:12px;padding:11px;background:var(--card2);margin-bottom:10px}
+.jogada .cab{display:flex;gap:8px;align-items:center;margin-bottom:6px}
+.jogada .cab b{font-size:14px}
+.palco{position:relative;width:100%;max-width:430px;margin:0 auto}
+.campo{width:100%;display:block;border-radius:10px;background:
+ repeating-linear-gradient(0deg,#1e7a3d 0 8.33%,#1a6d36 8.33% 16.66%);touch-action:none;user-select:none}
+@media print{header,.side,.noprint{display:none!important}body{background:#fff;color:#000}.wrap{display:block;padding:0}.card{border:none;padding:0;background:#fff;margin:0 0 10px}h3{color:#000}th,td{border-bottom:1px solid #bbb}input,textarea,select{border:none;background:#fff;color:#000;padding:0}.jogada{background:#fff;border:1px solid #ccc}.campo{background:#1e7a3d}}
+.hint{font-size:12px;color:var(--mut);margin-top:6px}
+.empty{color:var(--mut);text-align:center;padding:34px 10px}
+.aviso{background:#241f10;border:1px solid #6a5518;color:#f0dc9e;border-radius:9px;padding:8px 10px;font-size:12.5px;margin-top:8px}
+.sav{font-size:12px;color:var(--acc);opacity:0;transition:opacity .25s}
+.sav.on{opacity:1}
+#fab{position:fixed;right:14px;bottom:14px;z-index:30;display:none}
+@media(max-width:819px){#fab{display:block}}
+</style>
+</head>
+<body>
+<header>
+ <span class="tit">📋 Análise de Adversário</span>
+ <span class="sav" id="sav">guardado ✓</span>
+ <span class="sp"></span>
+ <button class="btn sm" id="bExp" type="button">💾 Backup</button>
+ <label class="btn sm" style="margin:0;text-transform:none;font-size:13px;padding:8px 12px">📂 Importar<input type="file" id="fImp" accept=".json" hidden></label>
+ <button class="btn sm" id="bPrn" type="button">🖨️ PDF</button>
+</header>
+
+<div class="wrap">
+ <aside class="side card">
+  <div class="row" style="margin-bottom:10px">
+   <input id="q" placeholder="Pesquisar adversário...">
+   <button class="btn pri" id="bNovo" type="button">+ Novo</button>
+  </div>
+  <div id="lst"></div>
+ </aside>
+ <main id="det"></main>
+</div>
+<button class="btn pri" id="fab" type="button">+ Novo adversário</button>
+
+<script>
+/* ================================================================
+   ANÁLISE DE ADVERSÁRIO — aplicação de um treinador
+   Peça 1: motor do quadro tático
+   Peça 2: guardar/carregar no aparelho (localStorage)  -> TESTADO
+   Peça 3: ecrãs e ligações                            -> TESTADO
+   ================================================================ */
+
+/* ---------- PEÇA 1: QUADRO TÁTICO ---------- */
+function campo(){
+ return '<svg viewBox="0 0 680 1050" class="campo" preserveAspectRatio="xMidYMid meet">'
+ +'<defs>'
+ +'<marker id="seta" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 z" fill="#ffe14d"/></marker>'
+ +'<marker id="setaP" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 z" fill="#ffffff"/></marker>'
+ +'</defs>'
+ +'<rect x="10" y="10" width="660" height="1030" fill="none" stroke="#fff" stroke-width="3" opacity=".9"/>'
+ +'<line x1="10" y1="525" x2="670" y2="525" stroke="#fff" stroke-width="3" opacity=".9"/>'
+ +'<circle cx="340" cy="525" r="80" fill="none" stroke="#fff" stroke-width="3" opacity=".9"/>'
+ +'<circle cx="340" cy="525" r="4" fill="#fff"/>'
+ +'<rect x="170" y="10" width="340" height="155" fill="none" stroke="#fff" stroke-width="3" opacity=".9"/>'
+ +'<rect x="250" y="10" width="180" height="60" fill="none" stroke="#fff" stroke-width="3" opacity=".9"/>'
+ +'<path d="M275,165 a65,65 0 0 0 130,0" fill="none" stroke="#fff" stroke-width="3" opacity=".9"/>'
+ +'<rect x="170" y="885" width="340" height="155" fill="none" stroke="#fff" stroke-width="3" opacity=".9"/>'
+ +'<rect x="250" y="980" width="180" height="60" fill="none" stroke="#fff" stroke-width="3" opacity=".9"/>'
+ +'<path d="M275,885 a65,65 0 0 1 130,0" fill="none" stroke="#fff" stroke-width="3" opacity=".9"/>'
+ +'</svg>';
+}
+function desenhar(c){
+ var q=(c&&c.q)?c.q:{tok:[],arr:[]};
+ if(!Array.isArray(q.tok))q.tok=[];
+ if(!Array.isArray(q.arr))q.arr=[];
+ var s=campo();
+ q.arr.forEach(function(a,i){
+  s+='<line data-a="'+i+'" x1="'+a.x1+'" y1="'+a.y1+'" x2="'+a.x2+'" y2="'+a.y2+'" stroke="'+(a.t==='pass'?'#ffffff':'#ffe14d')+'" stroke-width="3.5" '+(a.t==='pass'?'stroke-dasharray="9 7"':'')+' marker-end="url(#'+(a.t==='pass'?'setaP':'seta')+')"/>';
+ });
+ q.tok.forEach(function(t,i){
+  if(t.t==='ball'){
+   s+='<g data-k="'+i+'"><circle cx="'+t.x+'" cy="'+t.y+'" r="11" fill="#fff" stroke="#111" stroke-width="2"/><text x="'+t.x+'" y="'+t.y+'" text-anchor="middle" dominant-baseline="central" font-size="13" fill="#111">&#9917;</text></g>';
+  } else if(t.t==='cone'){
+   s+='<g data-k="'+i+'"><polygon points="'+t.x+','+(t.y-13)+' '+(t.x-11)+','+(t.y+10)+' '+(t.x+11)+','+(t.y+10)+'" fill="#ffe14d" stroke="#111" stroke-width="1.5"/></g>';
+  } else {
+   var cor=t.t==='A'?'#e23b3b':'#3b82f6';
+   s+='<g data-k="'+i+'"><circle cx="'+t.x+'" cy="'+t.y+'" r="19" fill="'+cor+'" stroke="#fff" stroke-width="2.5"/><text x="'+t.x+'" y="'+t.y+'" text-anchor="middle" dominant-baseline="central" font-size="16" font-weight="700" fill="#fff" pointer-events="none">'+String(t.n==null?'':t.n)+'</text></g>';
+  }
+ });
+ return s;
+}
+function pontos(e,el){
+ var r=el.getBoundingClientRect();
+ return {x:Math.round((e.clientX-r.left)*680/r.width), y:Math.round((e.clientY-r.top)*1050/r.height)};
+}
+
+/* ---------- PEÇA 2: GUARDAR NO APARELHO ---------- */
+var CHAVE='analiseAdversario_v2';
+function novoAdversario(nome){
+ return {id:'a'+Date.now().toString(36)+Math.floor(Math.random()*1e4).toString(36),
+  nome:nome||'', equipa:'', data:'', comp:'', campo:'', sistema:'', sistemaNota:'',
+  forma:[], onze:[],
+  orgOf:'', orgDef:'', trOf:'', trDef:'',
+  bpOf:[novaJogada('Canto ofensivo'),novaJogada('Livre lateral ofensivo'),novaJogada('Livre frontal ofensivo')],
+  bpDef:[novaJogada('Canto defensivo'),novaJogada('Livre frontal defensivo')],
+  pontosChave:'', suspensos:'', notas:'', links:[]};
+}
+function novaJogada(tipo){return {id:'j'+Date.now().toString(36)+Math.floor(Math.random()*1e4).toString(36),tipo:tipo,nome:'',descricao:'',q:{tok:[],arr:[]}}}
+function carregar(){
+ try{ var r=localStorage.getItem(CHAVE); if(!r)return {adv:[],sel:null};
+  var d=JSON.parse(r);
+  if(!d||!Array.isArray(d.adv))return {adv:[],sel:null};
+  d.adv.forEach(function(a){
+   if(!Array.isArray(a.forma))a.forma=[];
+   if(!Array.isArray(a.onze))a.onze=[];
+   if(!Array.isArray(a.bpOf)||!a.bpOf.length)a.bpOf=[novaJogada('Canto ofensivo'),novaJogada('Livre lateral ofensivo'),novaJogada('Livre frontal ofensivo')];
+   if(!Array.isArray(a.bpDef)||!a.bpDef.length)a.bpDef=[novaJogada('Canto defensivo'),novaJogada('Livre frontal defensivo')];
+   if(!Array.isArray(a.links))a.links=[];
+   a.bpOf.forEach(function(j){if(!j.q)j.q={tok:[],arr:[]}});
+   a.bpDef.forEach(function(j){if(!j.q)j.q={tok:[],arr:[]}});
+  });
+  return d;
+ }catch(e){return {adv:[],sel:null}}
+}
+var E=carregar();
+var tmr=null;
+function gravar(){
+ if(tmr)clearTimeout(tmr);
+ tmr=setTimeout(function(){
+  try{ localStorage.setItem(CHAVE,JSON.stringify(E));
+   var s=document.getElementById('sav'); if(s){s.className='sav on';setTimeout(function(){s.className='sav'},800);}
+  }catch(err){ alert('Não consegui guardar neste aparelho. Use o botão Backup para não perder o trabalho.'); }
+ },200);
+}
+function atual(){ return E.adv.filter(function(a){return a.id===E.sel})[0]||null; }
+function limpo(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]}); }
+function escAttr(s){ return limpo(s); }
+
+/* ---------- PEÇA 3: ECRÃS ---------- */
+var TIPOS_OF=['Canto ofensivo','Livre lateral ofensivo','Livre frontal ofensivo','Lançamento lateral ofensivo','Pontapé de saída','Penálti'];
+var TIPOS_DEF=['Canto defensivo','Livre lateral defensivo','Livre frontal defensivo','Penálti (defesa)','Pontapé de baliza'];
+var OPCOES_TIPO=TIPOS_OF.concat(TIPOS_DEF);
+
+function lista(){
+ var q=(document.getElementById('q').value||'').toLowerCase();
+ var arr=E.adv.filter(function(a){return JSON.stringify(a).toLowerCase().indexOf(q)>=0});
+ var h='';
+ if(!arr.length){ h='<div class="empty">Ainda não há adversários.<br>Carregue em «+ Novo».</div>'; }
+ else arr.forEach(function(a){
+  h+='<div class="it'+(a.id===E.sel?' on':'')+'" data-id="'+a.id+'"><b>'+limpo(a.nome||'Sem nome')+'</b><small>'+limpo(a.data||'sem data')+(a.sistema?' · '+limpo(a.sistema):'')+'</small></div>';
+ });
+ document.getElementById('lst').innerHTML=h;
+ Array.prototype.forEach.call(document.querySelectorAll('#lst .it'),function(el){
+  el.onclick=function(){ E.sel=el.getAttribute('data-id'); gravar(); lista(); detalhe(); };
+ });
+}
+
+function blocoTexto(idCampo,rotulo,dica){
+ var a=atual();
+ return '<label>'+rotulo+'</label><textarea data-t="'+idCampo+'" placeholder="'+escAttr(dica||'')+'">'+limpo(a[idCampo])+'</textarea>';
+}
+
+function tabelaForma(){
+ var a=atual(), h='';
+ h+='<table><tr><th style="width:52px">Data</th><th>Adversário (casa)</th><th style="width:52px">GM</th><th style="width:52px">GS</th><th>Adversário (fora)</th><th style="width:44px">R</th><th class="noprint"></th></tr>';
+ if(!a.forma.length) h+='<tr><td colspan="7" style="color:var(--mut)">Sem jogos. Carregue em «+ Jogo».</td></tr>';
+ a.forma.forEach(function(j,i){
+  var gm=j.gm===''||j.gm==null?null:Number(j.gm), gs=j.gs===''||j.gs==null?null:Number(j.gs);
+  var r=''; if(gm!=null&&gs!=null&&!isNaN(gm)&&!isNaN(gs)) r = gm>gs?'V':(gm<gs?'D':'E');
+  h+='<tr>'
+   +'<td><input value="'+escAttr(j.data)+'" data-f="'+i+'" data-k="data"></td>'
+   +'<td><input value="'+escAttr(j.casa)+'" data-f="'+i+'" data-k="casa"></td>'
+   +'<td><input value="'+escAttr(j.gm)+'" data-f="'+i+'" data-k="gm" inputmode="numeric" style="width:48px"></td>'
+   +'<td><input value="'+escAttr(j.gs)+'" data-f="'+i+'" data-k="gs" inputmode="numeric" style="width:48px"></td>'
+   +'<td><input value="'+escAttr(j.fora)+'" data-f="'+i+'" data-k="fora"></td>'
+   +'<td>'+(r?'<span class="f'+r+'">'+r+'</span>':'')+'</td>'
+   +'<td class="noprint"><button class="btn sm del" type="button" data-fdel="'+i+'">×</button></td></tr>';
+ });
+ h+='</table><button class="btn sm noprint" type="button" id="bAddJogo" style="margin-top:6px">+ Jogo</button>';
+ var seq=a.forma.map(function(j){
+  var gm=Number(j.gm),gs=Number(j.gs);
+  if(j.gm===''||j.gs===''||isNaN(gm)||isNaN(gs))return '';
+  return gm>gs?'V':(gm<gs?'D':'E');
+ }).filter(Boolean);
+ if(seq.length) h+='<div style="margin-top:8px"><small style="color:var(--mut)">Forma (do mais recente para o mais antigo):</small><div class="tags" style="margin-top:4px">'
+  +seq.map(function(x){return '<span class="f'+x+'">'+x+'</span>'}).join('')+'</div></div>';
+ return h;
+}
+
+function tabelaOnze(){
+ var a=atual(), h='';
+ var nums=a.onze.map(function(p){return p.n==null?'':String(p.n).trim()}).filter(Boolean);
+ var rep=[]; nums.forEach(function(n,i){ if(nums.indexOf(n)!==i && rep.indexOf(n)<0) rep.push(n); });
+ h+='<table><tr><th style="width:56px">Nº</th><th>Nome</th><th style="width:110px">Posição</th><th class="noprint"></th></tr>';
+ if(!a.onze.length) h+='<tr><td colspan="4" style="color:var(--mut)">Sem jogadores. Carregue em «+ Jogador» (máx. 11).</td></tr>';
+ a.onze.forEach(function(p,i){
+  var dup = p.n && rep.indexOf(String(p.n).trim())>=0;
+  h+='<tr>'
+   +'<td><input value="'+escAttr(p.n)+'" data-o="'+i+'" data-k="n" inputmode="numeric" style="width:52px;'+(dup?'border-color:#e23b3b':'')+'"></td>'
+   +'<td><input value="'+escAttr(p.nome)+'" data-o="'+i+'" data-k="nome"></td>'
+   +'<td><input value="'+escAttr(p.pos)+'" data-o="'+i+'" data-k="pos"></td>'
+   +'<td class="noprint"><button class="btn sm del" type="button" data-odel="'+i+'">×</button></td></tr>';
+ });
+ h+='</table>';
+ if(rep.length) h+='<div class="aviso">⚠ Números repetidos no 11 inicial: '+limpo(rep.join(', '))+' — confirme no site oficial.</div>';
+ if(!a.onze.length) h+='<div class="hint">Se um dia me der o endereço da ficha de jogo da FPF, esta grelha pode vir preenchida automaticamente.</div>';
+ return h;
+}
+
+function quadro(j,jogada,campoId){
+ var t=limpo(jogada.tipo);
+ return '<div class="jogada" data-j="'+jogada.id+'">'
+ +'<div class="cab"><select data-jtipo="'+jogada.id+'" style="max-width:260px">'
+ +OPCOES_TIPO.map(function(o){return '<option'+(o===jogada.tipo?' selected':'')+'>'+o+'</option>'}).join('')
+ +'</select><span class="sp2"></span><button class="btn sm del noprint" type="button" data-jdel="'+jogada.id+'">Apagar</button></div>'
+ +'<label>Nome / código da jogada</label><input data-jnome="'+jogada.id+'" value="'+escAttr(jogada.nome)+'" placeholder="Ex.: Canto direito — 1º poste">'
+ +'<div class="row noprint" style="margin:9px 0">'
+ +'<button class="btn sm" type="button" data-tool="move" data-alvo="'+jogada.id+'" class="on">✋ Mover</button>'
+ +'<button class="btn sm" type="button" data-tool="A" data-alvo="'+jogada.id+'">🔴 Nós</button>'
+ +'<button class="btn sm" type="button" data-tool="B" data-alvo="'+jogada.id+'">🔵 Adversário</button>'
+ +'<button class="btn sm" type="button" data-tool="ball" data-alvo="'+jogada.id+'">⚽ Bola</button>'
+ +'<button class="btn sm" type="button" data-tool="arr" data-alvo="'+jogada.id+'">➡ Corrida</button>'
+ +'<button class="btn sm" type="button" data-tool="pass" data-alvo="'+jogada.id+'">⇢ Passe</button>'
+ +'<button class="btn sm" type="button" data-tool="cone" data-alvo="'+jogada.id+'">🔺 Cone</button>'
+ +'<button class="btn sm" type="button" data-tool="del" data-alvo="'+jogada.id+'">🗑 Apagar</button>'
+ +'<button class="btn sm" type="button" data-limpar="'+jogada.id+'">Limpar</button>'
+ +'</div>'
+ +'<div class="palco" id="'+campoId+'">'+desenhar(jogada)+'</div>'
+ +'<div class="hint noprint">Meio-campo vertical (baliza em cima). Toque onde quer colocar o elemento; arraste os pins para os mover; com «Corrida» ou «Passe», arraste para desenhar a seta.</div>'
+ +'<label>Descrição / movimentos</label><textarea data-jdesc="'+jogada.id+'" placeholder="1º movimento, bloqueio, zona de ataque, quem fica fora...">'+limpo(jogada.descricao)+'</textarea>'
+ +'</div>';
+}
+
+function detalhe(){
+ var a=atual();
+ if(!a){ document.getElementById('det').innerHTML='<div class="card empty">Escolha ou crie um adversário à esquerda.</div>'; return; }
+ var h='';
+ h+='<div class="card">'
+ +'<div class="row"><h2 style="margin:0">'+(limpo(a.nome)||'Novo adversário')+'</h2><span class="sp2"></span>'
+ +'<button class="btn sm del noprint" type="button" id="bApagar">Apagar relatório</button></div>'
+ +'<div class="g3" style="margin-top:8px">'
+ +'<div><label>Adversário</label><input data-a="nome" value="'+escAttr(a.nome)+'" placeholder="Nome do clube"></div>'
+ +'<div><label>Competição / jornada</label><input data-a="comp" value="'+escAttr(a.comp)+'" placeholder="Ex.: Distrital 1.ª Div. — J7"></div>'
+ +'<div><label>Data do jogo</label><input type="date" data-a="data" value="'+escAttr(a.data)+'"></div>'
+ +'</div>'
+ +'<div class="g3">'
+ +'<div><label>A nossa equipa</label><input data-a="equipa" value="'+escAttr(a.equipa)+'" placeholder="Ex.: Juventude FC"></div>'
+ +'<div><label>Campo / local</label><input data-a="campo" value="'+escAttr(a.campo)+'" placeholder="Casa / Fora / nome do campo"></div>'
+ +'<div><label>Casa ou fora</label><input data-a="casaFora" value="'+escAttr(a.casaFora)+'" placeholder="Casa / Fora / Neutro"></div>'
+ +'</div>'
+ +'<div class="g2">'
+ +'<div><label>Sistema de jogo preferencial</label><input data-a="sistema" value="'+escAttr(a.sistema)+'" placeholder="Ex.: 4-4-2"></div>'
+ +'<div><label>Variações / nota do sistema</label><input data-a="sistemaNota" value="'+escAttr(a.sistemaNota)+'" placeholder="Ex.: passa a 4-3-3 sem bola"></div>'
+ +'</div>'
+ +'</div>';
+
+ h+='<div class="card"><h3>Últimos 5 jogos</h3><div class="hint" style="margin-bottom:8px">Preencha os golos marcados (GM) e sofridos (GS) e a forma calcula-se sozinha. Se um dia me der o endereço do zerozero, isto pode vir preenchido automaticamente.</div>'
+ +tabelaForma()+'</div>';
+
+ h+='<div class="card"><h3>11 inicial — último jogo</h3><div class="hint" style="margin-bottom:8px">Número e nome, como na ficha de jogo.</div>'
+ +tabelaOnze()+'</div>';
+
+ h+='<div class="card"><h3>Os quatro momentos</h3>'
+ +'<div class="g2">'
+ +'<div>'+blocoTexto('orgOf','Organização ofensiva','Como constrói, saída de bola, corredores que prefere, quem cria perigo...')+'</div>'
+ +'<div>'+blocoTexto('orgDef','Organização defensiva','Altura do bloco, pressão, referências, espaços que deixa...')+'</div>'
+ +'<div>'+blocoTexto('trOf','Transição ofensiva','Contra-ataque? Quem arranca? Primeiro passe? Quantos jogadores sobem?')+'</div>'
+ +'<div>'+blocoTexto('trDef','Transição defensiva','Reação à perda: pressiona logo ou recua? Quem desequilibra?')+'</div>'
+ +'</div></div>';
+
+ h+='<div class="card"><h3>Bolas paradas ofensivas — 3 desenhos</h3>'
+ +'<div class="hint" style="margin-bottom:8px">O mínimo são 3, para poder mostrar à equipa. Acrescente as que quiser.</div>'
+ +a.bpOf.map(function(j,i){return quadro(i,j,'q_of_'+i)}).join('')
+ +'<button class="btn sm noprint" type="button" id="bAdOf">+ Acrescentar bola parada ofensiva</button></div>';
+
+ h+='<div class="card"><h3>Bolas paradas defensivas — 2 desenhos</h3>'
+ +'<div class="hint" style="margin-bottom:8px">Como o adversário ataca os cantos e livres, para preparar a defesa.</div>'
+ +a.bpDef.map(function(j,i){return quadro(i,j,'q_def_'+i)}).join('')
+ +'<button class="btn sm noprint" type="button" id="bAdDef">+ Acrescentar bola parada defensiva</button></div>';
+
+ h+='<div class="card"><h3>Pontos-chave e suspensos</h3>'
+ +'<div class="g2">'
+ +'<div>'+blocoTexto('pontosChave','Pontos-chave para a nossa equipa','O que tem de ser dito no balneário, fraquezas a explorar...')+'</div>'
+ +'<div>'+blocoTexto('suspensos','Jogadores suspensos / lesionados / dúvidas','Ex.: Nº 5 e Nº 10 estão suspensos; Nº 8 é dúvida.')+'</div>'
+ +'</div>'
+ +'<label>Notas livres / links de vídeo</label><textarea data-t="notas" placeholder="Links de vídeo, observações soltas...">'+limpo(a.notas)+'</textarea>'
+ +'</div>';
+
+ document.getElementById('det').innerHTML=h;
+ ligar();
+}
+
+function ligar(){
+ var a=atual(); if(!a)return;
+ // campos simples
+ Array.prototype.forEach.call(document.querySelectorAll('#det [data-a]'),function(el){
+  el.oninput=function(){ a[el.getAttribute('data-a')]=el.value; gravar(); if(el.getAttribute('data-a')==='nome')lista(); };
+ });
+ Array.prototype.forEach.call(document.querySelectorAll('#det [data-t]'),function(el){
+  el.oninput=function(){ a[el.getAttribute('data-t')]=el.value; gravar(); };
+ });
+ // resultados
+ Array.prototype.forEach.call(document.querySelectorAll('#det [data-f]'),function(el){
+  el.oninput=function(){ var i=+el.getAttribute('data-f'), k=el.getAttribute('data-k');
+   a.forma[i][k]=el.value; gravar();
+   if(k==='gm'||k==='gs'){ var foco=document.activeElement===el; detalhe(); if(foco){} }
+  };
+ });
+ Array.prototype.forEach.call(document.querySelectorAll('#det [data-fdel]'),function(el){
+  el.onclick=function(){ a.forma.splice(+el.getAttribute('data-fdel'),1); gravar(); detalhe(); };
+ });
+ var bj=document.getElementById('bAddJogo');
+ if(bj)bj.onclick=function(){ if(a.forma.length>=5){ if(!confirm('Já tem 5 jogos. Acrescentar na mesma?'))return; } a.forma.unshift({data:'',casa:'',gm:'',gs:'',fora:''}); gravar(); detalhe(); };
+ // onze
+ Array.prototype.forEach.call(document.querySelectorAll('#det [data-o]'),function(el){
+  el.oninput=function(){ var i=+el.getAttribute('data-o'); a.onze[i][el.getAttribute('data-k')]=el.value; gravar(); };
+ });
+ Array.prototype.forEach.call(document.querySelectorAll('#det [data-odel]'),function(el){
+  el.onclick=function(){ a.onze.splice(+el.getAttribute('data-odel'),1); gravar(); detalhe(); };
+ });
+ // bolas paradas
+ Array.prototype.forEach.call(document.querySelectorAll('#det [data-jtipo]'),function(el){
+  el.onchange=function(){ var id=el.getAttribute('data-jtipo');
+   ['bpOf','bpDef'].forEach(function(g){ a[g].forEach(function(j){ if(j.id===id)j.tipo=el.value; }) }); gravar(); };
+ });
+ Array.prototype.forEach.call(document.querySelectorAll('#det [data-jnome]'),function(el){
+  el.oninput=function(){ var id=el.getAttribute('data-jnome');
+   ['bpOf','bpDef'].forEach(function(g){ a[g].forEach(function(j){ if(j.id===id)j.nome=el.value; }) }); gravar(); };
+ });
+ Array.prototype.forEach.call(document.querySelectorAll('#det [data-jdesc]'),function(el){
+  el.oninput=function(){ var id=el.getAttribute('data-jdesc');
+   ['bpOf','bpDef'].forEach(function(g){ a[g].forEach(function(j){ if(j.id===id)j.descricao=el.value; }) }); gravar(); };
+ });
+ Array.prototype.forEach.call(document.querySelectorAll('#det [data-jdel]'),function(el){
+  el.onclick=function(){ var id=el.getAttribute('data-jdel');
+   ['bpOf','bpDef'].forEach(function(g){ a[g]=a[g].filter(function(j){return j.id!==id}); }); gravar(); detalhe(); };
+ });
+ var bo=document.getElementById('bAdOf');
+ if(bo)bo.onclick=function(){ a.bpOf.push(novaJogada('Canto ofensivo')); gravar(); detalhe(); };
+ var bd=document.getElementById('bAdDef');
+ if(bd)bd.onclick=function(){ a.bpDef.push(novaJogada('Canto defensivo')); gravar(); detalhe(); };
+ // apagar relatorio
+ var ba=document.getElementById('bApagar');
+ if(ba)ba.onclick=function(){ if(!confirm('Apagar o relatório de '+(a.nome||'este adversário')+'?'))return;
+  E.adv=E.adv.filter(function(x){return x.id!==a.id}); E.sel=null; gravar(); lista(); detalhe(); };
+ // quadros
+ Array.prototype.forEach.call(document.querySelectorAll('#det .palco'),function(palco){
+  var jogId=palco.parentNode.getAttribute('data-j');
+  var jogada=null;
+  ['bpOf','bpDef'].forEach(function(g){ a[g].forEach(function(j){ if(j.id===jogId)jogada=j; }) });
+  if(!jogada)return;
+  ligarQuadro(palco,jogada,a);
+ });
+ // ferramentas
+ Array.prototype.forEach.call(document.querySelectorAll('#det [data-tool]'),function(el){
+  el.onclick=function(){
+   var alvo=el.getAttribute('data-alvo');
+   Array.prototype.forEach.call(document.querySelectorAll('#det [data-tool][data-alvo="'+alvo+'"]'),function(x){ x.className='btn sm'; });
+   el.className='btn sm pri';
+   estadoFerramenta[alvo]=el.getAttribute('data-tool');
+  };
+ });
+ Array.prototype.forEach.call(document.querySelectorAll('#det [data-limpar]'),function(el){
+  el.onclick=function(){ if(!confirm('Limpar o quadro desta jogada?'))return;
+   var id=el.getAttribute('data-limpar');
+   ['bpOf','bpDef'].forEach(function(g){ a[g].forEach(function(j){ if(j.id===id)j.q={tok:[],arr:[]}; }) });
+   gravar(); detalhe(); };
+ });
+}
+
+var estadoFerramenta={};
+function ligarQuadro(palco,jogada,a){
+ var svg=palco.querySelector('svg');
+ var mau=true,desenha=null,drag=null,ar=null;
+ function fer(){ return estadoFerramenta[jogada.id]||'move'; }
+ function redesenha(){ svg.outerHTML=desenhar(jogada); ligarQuadro(palco,jogada,a); }
+ function p(e){ return pontos(e,palco); }
+ palco.addEventListener('pointerdown',function(e){
+  var el=svg, alvo=e.target;
+  var g=alvo.closest?alvo.closest('[data-k]'):null;
+  var ln=alvo.closest?alvo.closest('[data-a]'):null;
+  var f=fer();
+  if(f==='del'){
+   e.preventDefault();
+   if(g){ jogada.q.tok.splice(+g.getAttribute('data-k'),1); }
+   else if(ln){ jogada.q.arr.splice(+ln.getAttribute('data-a'),1); }
+   gravar(); redesenha(); return;
+  }
+  if(f==='move'){ if(g){ drag=+g.getAttribute('data-k'); e.preventDefault(); } return; }
+  if(f==='A'||f==='B'){
+   e.preventDefault();
+   var n=prompt('Número ou letra do jogador:',(jogada.q.tok.filter(function(t){return t.t===f}).length+1));
+   if(n===null||n==='')return;
+   var pt=p(e); jogada.q.tok.push({t:f,x:pt.x,y:pt.y,n:n}); gravar(); redesenha(); return;
+  }
+  if(f==='ball'){
+   e.preventDefault();
+   jogada.q.tok=jogada.q.tok.filter(function(t){return t.t!=='ball'});
+   var pb=p(e); jogada.q.tok.push({t:'ball',x:pb.x,y:pb.y}); gravar(); redesenha(); return;
+  }
+  if(f==='cone'){
+   e.preventDefault();
+   var pc=p(e); jogada.q.tok.push({t:'cone',x:pc.x,y:pc.y}); gravar(); redesenha(); return;
+  }
+  if(f==='arr'||f==='pass'){
+   e.preventDefault();
+   var pa=p(e); ar={t:f,x1:pa.x,y1:pa.y,x2:pa.x,y2:pa.y}; mau=true; desenha=true;
+  }
+ },{passive:false});
+ palco.addEventListener('pointermove',function(e){
+  if(drag===null&&!ar)return;
+  e.preventDefault();
+  var pt=p(e);
+  if(drag!==null){ jogada.q.tok[drag].x=pt.x; jogada.q.tok[drag].y=pt.y; }
+  else if(ar){ ar.x2=pt.x; ar.y2=pt.y; mau=false; }
+  var tmp={q:{tok:jogada.q.tok,arr:jogada.q.arr.concat(ar?[ar]:[])}};
+  svg.outerHTML=desenhar(tmp);
+  svg=palco.querySelector('svg');
+  ligarQuadro(palco,jogada,a);
+ },{passive:false});
+ function fim(){
+  if(drag!==null){ drag=null; gravar(); return; }
+  if(ar){
+   if(!mau) jogada.q.arr.push(ar);
+   ar=null; gravar(); redesenha();
+  }
+ }
+ palco.addEventListener('pointerup',fim);
+ palco.addEventListener('pointercancel',fim);
+ palco.addEventListener('pointerleave',function(e){ if(drag!==null||ar)fim(); });
+}
+
+/* ---------- TOPO: backup, importar, imprimir ---------- */
+document.getElementById('bNovo').onclick=function(){
+ var nome=prompt('Nome do adversário:','');
+ if(nome===null)return;
+ var a=novoAdversario(nome.trim());
+ E.adv.unshift(a); E.sel=a.id; gravar(); lista(); detalhe(); window.scrollTo(0,0);
+};
+document.getElementById('fab').onclick=function(){ document.getElementById('bNovo').click(); };
+document.getElementById('bPrn').onclick=function(){ window.print(); };
+document.getElementById('bExp').onclick=function(){
+ var a=document.createElement('a');
+ a.href=URL.createObjectURL(new Blob([JSON.stringify(E,null,1)],{type:'application/json'}));
+ a.download='analise-adversario-'+new Date().toISOString().slice(0,10)+'.json'; a.click();
+};
+document.getElementById('fImp').onchange=function(ev){
+ var f=ev.target.files&&ev.target.files[0]; if(!f)return;
+ var r=new FileReader();
+ r.onload=function(){
+  try{ var d=JSON.parse(r.result);
+   if(!d||!Array.isArray(d.adv))throw new Error('formato');
+   if(!confirm('Substituir os dados deste aparelho pelo backup?'))return;
+   E=d; E.sel=E.adv.length?E.adv[0].id:null; gravar(); lista(); detalhe();
+  }catch(err){ alert('Ficheiro inválido.'); }
+ };
+ r.readAsText(f);
+};
+document.getElementById('q').oninput=lista;
+
+lista();
+if(E.adv.length){ if(!E.sel)E.sel=E.adv[0].id; detalhe(); } else { detalhe(); }
+</script>
+</body>
+</html>
